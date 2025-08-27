@@ -18,6 +18,8 @@ set(CMAKE_C_FLAGS_DEBUG -g)
 set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3")
 set(CMAKE_C_EXTENSIONS OFF)
 
+find_package(Boost REQUIRED COMPONENTS system)
+
 include_directories(include)
 
 add_subdirectory(include)
