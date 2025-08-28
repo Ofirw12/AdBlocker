@@ -10,10 +10,10 @@ namespace adblocker
 class DNSBlockList
 {
 public:
-    explicit DNSBlockList() = default;
+    explicit DNSBlockList(const std::string& path);
     ~DNSBlockList() = default;
 
-    bool Load(const std::string& path);
+    bool Load();
     [[nodiscard]] bool IsValid(const std::string& domain) const;
 
     DNSBlockList(const DNSBlockList& other) = delete;
@@ -23,6 +23,7 @@ public:
 
 private:
     std::unordered_set<std::string> m_domains;
+    const std::string& m_path;
 }; // class DNSBlockList
 } // namespace adblocker
 

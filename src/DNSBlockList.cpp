@@ -3,9 +3,13 @@
 
 #include "DNSBlockList.hpp"
 
-bool adblocker::DNSBlockList::Load(const std::string& path)
+adblocker::DNSBlockList::DNSBlockList(const std::string& path)
+: m_path(path)
+{}
+
+bool adblocker::DNSBlockList::Load()
 {
-    std::ifstream file(path);
+    std::ifstream file(m_path);
     if (!file.is_open())
     {
         return false;

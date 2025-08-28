@@ -6,6 +6,7 @@
 #define ADBLOCKER_DNSADBLOCKER_HPP
 
 #include <array>
+#include <utility>
 #include <vector>
 #include <boost/asio.hpp>
 
@@ -31,15 +32,13 @@ private:
     void StartReceive();
     void HandleReceive(std::size_t bytes_transferred,
                         const boost::asio::ip::udp::endpoint& remote);
-    void ForwardQuery(const uint8_t* data, size_t len,
-                        const boost::asio::ip::udp::endpoint& client);
-    void SendResponse(const std::vector<uint8_t>& response,
-                        const boost::asio::ip::udp::endpoint& client);
+    void ForwardQuery(const uint8_t* data, size_t len);
+    void SendResponse(const std::vector<uint8_t>& response);
 
-    boost::asio::ip::udp::socket m_listen_socket;
-    boost::asio::ip::udp::socket m_upstream_socket;
-    boost::asio::ip::udp::endpoint m_upstream_endpoint;
-    boost::asio::ip::udp::endpoint m_client;
+    boost::asio::ip::udp::socket m_listen_socket; //listen to UDP 53
+    boost::asio::ip::udp::socket m_upstream_socket; // 8.8.8.8 UDP 53
+    boost::asio::ip::udp::endpoint m_upstream_endpoint; // ?
+    boost::asio::ip::udp::endpoint m_client; // user
     std::array<uint8_t, 1500> m_buffer;
     DNSBlockList m_blocklist;
 }; // class DNSAdBlocker
