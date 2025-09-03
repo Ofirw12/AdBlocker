@@ -12,6 +12,9 @@ project(parser)
 add_library(parser_static STATIC DNSParser.cpp)
 add_library(parser_shared SHARED DNSParser.cpp)
 
+target_link_libraries(adblocker_static blocklist_static parser_static)
+target_link_libraries(adblocker_shared blocklist_shared parser_shared)
+
 project(dnsserver)
 add_executable(dns_server main.cpp)
-target_link_libraries(dns_server blocklist_shared parser_shared)
+target_link_libraries(dns_server adblocker_shared)

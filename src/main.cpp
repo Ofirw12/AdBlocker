@@ -1,8 +1,9 @@
+
 #include <iostream>
 
 #include <iomanip>   // for std::setw, std::setfill
-#include <utility>
-#include <boost/asio.hpp>
+
+#include "DNSAdBlocker.hpp"
 
 using namespace boost::asio::ip;
 
@@ -21,13 +22,16 @@ void hex_dump(const uint8_t* data, std::size_t length)
 int main()
 {
     boost::asio::io_context io;
-    udp::socket sock(io, udp::endpoint(udp::v4(), 5300)); // 53 requires root, 5353 don't
-    std::array<uint8_t, 1500> buffer{};
-    udp::endpoint ep;
+    std::string listen_ip = "127.0.0.1";
+    unsigned short listen_port = 5300;
+    std::string dns_ip = "8.8.8.8";
+    unsigned short dns_port = 53;
+    std::string block_list_path = "blocklist.txt";
+    adblocker::DNSAdBlocker adblocker(io, listen_ip, listen_port,
+            dns_ip, dns_port, block_list_path);
 
-
+    adblocker.Run();
     io.run();
 
-    // std::cout << "Hello, World!" << std::endl;
     return 0;
 }
