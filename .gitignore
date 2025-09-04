@@ -21,5 +21,6 @@ src/CMakeFiles/
 !*.md
 !*.cpp
 !*.hpp
-!*.txt
+
+#ignore these
 src/CMakeCache.txt
