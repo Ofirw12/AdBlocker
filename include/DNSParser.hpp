@@ -21,14 +21,6 @@ public:
     /// @return domain name
     static std::string ParseQuery(const uint8_t* data, size_t len);
 
-    /// @brief 
-    /// @param query 
-    /// @param qlen 
-    /// @param q 
-    /// @return 
-    static std::vector<uint8_t> BuildBlockResponse(const uint8_t* query,
-                                            size_t qlen, const std::string& q);
-
     DNSParser() = delete;
     DNSParser(const DNSParser& other) = delete;
     DNSParser& operator=(const DNSParser& other) = delete;

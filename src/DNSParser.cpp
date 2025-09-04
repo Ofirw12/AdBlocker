@@ -32,8 +32,3 @@ std::string adblocker::DNSParser::ParseQuery(const uint8_t* data, size_t len)
 
     return domain;
 }
-
-std::vector<uint8_t> adblocker::DNSParser::BuildBlockResponse(
-    const uint8_t* query, size_t qlen, const std::string& q)
-{
-}
