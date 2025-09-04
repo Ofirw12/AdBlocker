@@ -11,6 +11,7 @@
 #include <boost/asio.hpp>
 
 #include "DNSBlockList.hpp"
+#include "DNSParser.hpp"
 
 namespace adblocker
 {

@@ -7,6 +7,9 @@
 /.idea
 /bin
 /build
+src/src/
+src/test/
+src/CMakeFiles/
 
 # don't ignore .gitignore
 !.gitignore
@@ -19,3 +22,4 @@
 !*.cpp
 !*.hpp
 !*.txt
+src/CMakeCache.txt
