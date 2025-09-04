@@ -12,23 +12,16 @@
 namespace adblocker
 {
 
-struct DNSQuestion
-{
-    std::string qname;
-    uint16_t qtype;
-    uint16_t qclass;
-};
-
 class DNSParser
 {
 public:
-    explicit DNSParser() = default;
-    ~DNSParser() = default;
+    /// @brief Parse the DNS query and search domain
+    /// @param data DNS query
+    /// @param len number of bytes transferred
+    /// @return domain name
+    static std::string ParseQuery(const uint8_t* data, size_t len);
 
-    static bool ParseQuery(const uint8_t* data, size_t len, DNSQuestion& out);
-    static std::vector<uint8_t> BuildBlockResponse(const uint8_t* query,
-                                            size_t qlen, const DNSQuestion& q);
-
+    DNSParser() = delete;
     DNSParser(const DNSParser& other) = delete;
     DNSParser& operator=(const DNSParser& other) = delete;
     DNSParser(DNSParser&& other) = delete;

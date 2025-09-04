@@ -43,8 +43,7 @@ void adblocker::DNSAdBlocker::StartReceive()
 void adblocker::DNSAdBlocker::HandleReceive(std::size_t bytes_transferred,
     const udp::endpoint& client)
 {
-    // TODO: parse DNS question properly
-    std::string domain = "sanjagh.com"; // placeholder
+    std::string domain = adblocker::DNSParser::ParseQuery(m_buffer.data(), bytes_transferred);
 
     if (m_blocklist.IsValid(domain))
     {

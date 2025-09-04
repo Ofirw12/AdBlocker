@@ -29,7 +29,8 @@ int main()
     std::string block_list_path = "blocklist.txt";
     adblocker::DNSAdBlocker adblocker(io, listen_ip, listen_port,
             dns_ip, dns_port, block_list_path);
-
+    
+    std::cout << "Start listening" << std::endl;
     adblocker.Run();
     io.run();
 
