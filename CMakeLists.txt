@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 3.10)
-project(AdBlocker)
+cmake_minimum_required(VERSION 3.16)
+
+project(AdBlocker LANGUAGES CXX)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin/debug)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin/release)
@@ -9,19 +10,21 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin/debug)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin/release)
 
 
-set(CMAKE_CXX_STANDARD_REQUIRED 23)
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_C_STANDARD_REQUIRED 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
 set(CMAKE_C_FLAGS "-pedantic-errors -Wall -Werror -Wextra")
 set(CMAKE_C_FLAGS_DEBUG -g)
 set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3")
-set(CMAKE_C_EXTENSIONS OFF)
 
-find_package(Boost REQUIRED COMPONENTS system)
+#find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost 1.70 REQUIRED COMPONENTS system filesystem)
 
 include_directories(include)
 
-add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(test)
