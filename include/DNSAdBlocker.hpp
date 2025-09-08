@@ -5,43 +5,56 @@
 #ifndef ADBLOCKER_DNSADBLOCKER_HPP
 #define ADBLOCKER_DNSADBLOCKER_HPP
 
-#include <array>
+#include <thread>
 #include <utility>
 #include <vector>
-#include <boost/asio.hpp>
 
 #include "DNSBlockList.hpp"
 #include "DNSParser.hpp"
+#include "UDPSocket.hpp"
 
 namespace adblocker
 {
+
+struct Endpoint
+{
+    std::string endpoint_ip;
+    uint16_t endpoint_port;
+};
+
 class DNSAdBlocker
 {
 public:
-    DNSAdBlocker(boost::asio::io_context& io, const std::string& listen_ip,
-                    unsigned short listen_port,const std::string& upstream_ip,
-                    unsigned short upstream_port,const std::string& blocklist_path);
-    ~DNSAdBlocker() = default;
+    DNSAdBlocker(const std::string& upstream_ip, unsigned short upstream_port,
+                                            const std::string& blocklist_path);
+    ~DNSAdBlocker();
 
-    void Run();
+    void Run(const std::string& listen_ip, uint16_t listen_port);
 
     DNSAdBlocker(const DNSAdBlocker& other) = delete;
     DNSAdBlocker& operator=(const DNSAdBlocker& other) = delete;
     DNSAdBlocker(DNSAdBlocker&& other) = delete;
     DNSAdBlocker& operator=(DNSAdBlocker&& other) = delete;
 private:
-    void StartReceive();
     void HandleReceive(std::size_t bytes_transferred,
-                        const boost::asio::ip::udp::endpoint& client);
-    void ForwardQuery(const uint8_t* data, size_t len, const boost::asio::ip::udp::endpoint& client);
-    void SendResponse(const std::vector<uint8_t>& response, const boost::asio::ip::udp::endpoint& client);
+                            const Endpoint& client);
+    void ForwardQuery(const uint8_t* data, size_t len,
+                            const Endpoint& client);
+    void SendResponse(const std::vector<uint8_t>& response,
+                            const Endpoint& client);
+    void ThreadFunc();
+    static std::vector<uint8_t> BuildNXDomainResponse(const uint8_t* query,
+                                                                    size_t len);
 
-    boost::asio::ip::udp::socket m_listen_socket; //listen to UDP 53
-    boost::asio::ip::udp::socket m_upstream_socket; // forward to 8.8.8.8 UDP 53
-    boost::asio::ip::udp::endpoint m_upstream_endpoint; // ?
-    // boost::asio::ip::udp::endpoint m_client; // user
-    std::array<uint8_t, 1500> m_buffer;
+    UDPSocket m_listen_socket; //listen to UDP 53
+    UDPSocket m_upstream_socket; // forward to 8.8.8.8 UDP 53
+    std::string m_upstream_ip;
+    uint16_t m_upstream_port;
+    const size_t BUFFER_SIZE = 1500;
+    std::vector<uint8_t> m_buffer;
     DNSBlockList m_blocklist;
+    std::jthread m_thread;
+    bool m_isRunning;
 }; // class DNSAdBlocker
 } // namespace adblocker
 
