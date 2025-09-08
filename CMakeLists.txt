@@ -22,7 +22,7 @@ set(CMAKE_C_FLAGS_DEBUG -g)
 set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3")
 
 #find_package(Boost REQUIRED COMPONENTS system)
-find_package(Boost 1.70 REQUIRED COMPONENTS system filesystem)
+#find_package(Boost 1.70 REQUIRED COMPONENTS system filesystem)
 
 include_directories(include)
 
