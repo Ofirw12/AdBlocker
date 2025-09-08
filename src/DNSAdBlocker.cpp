@@ -1,49 +1,53 @@
 
-#include "DNSAdBlocker.hpp"
-
 #include <iostream>
 
-using namespace boost::asio::ip;
+#include "DNSAdBlocker.hpp"
+#include "Logger.hpp"
 
-adblocker::DNSAdBlocker::DNSAdBlocker(boost::asio::io_context& io,
-    const std::string& listen_ip, unsigned short listen_port,
-    const std::string& upstream_ip, unsigned short upstream_port,
-    const std::string& blocklist_path)
-    : m_listen_socket(io, udp::endpoint(make_address(listen_ip), listen_port)),
-    m_upstream_socket(io),
-      m_upstream_endpoint(make_address(upstream_ip), upstream_port),
-      m_buffer(), m_blocklist(blocklist_path)
+adblocker::DNSAdBlocker::DNSAdBlocker(const std::string& upstream_ip, unsigned short upstream_port,
+                                      const std::string& blocklist_path)
+    : m_upstream_ip(upstream_ip), m_upstream_port(upstream_port),
+      m_buffer(BUFFER_SIZE), m_blocklist(blocklist_path), m_isRunning(false)
+{}
+
+adblocker::DNSAdBlocker::~DNSAdBlocker()
 {
-    m_upstream_socket.open(udp::v4());
-    m_upstream_socket.bind(udp::endpoint(address_v4::any(), 0));
+    m_isRunning = false;
 }
 
-void adblocker::DNSAdBlocker::Run()
+void adblocker::DNSAdBlocker::Run(const std::string& listen_ip, uint16_t listen_port)
 {
+    if (!m_listen_socket.Bind(listen_ip, listen_port))
+    {
+        // TODO add log
+        throw std::runtime_error("Failed to bind listen socket");
+    }
+
+    if (!m_upstream_socket.Bind("0.0.0.0", 0))
+    {
+        // TODO add log
+        throw std::runtime_error("Failed to bind upstream socket");
+    }
     m_blocklist.Load();
-    StartReceive();
+    m_thread = std::jthread(&DNSAdBlocker::ThreadFunc, this);
 }
 
-void adblocker::DNSAdBlocker::StartReceive()
+void adblocker::DNSAdBlocker::ThreadFunc()
 {
-    auto client = std::make_shared<udp::endpoint>();
-
-    m_listen_socket.async_receive_from(boost::asio::buffer(m_buffer), *client,
-        [this, client](const boost::system::error_code& ec, std::size_t bytes)
+    m_isRunning = true;
+    Endpoint client;
+    //TODO toggle off somewhere
+    while (m_isRunning)
+    {
+        ssize_t bytes = m_listen_socket.ReceiveFrom(m_buffer, client.endpoint_ip, client.endpoint_port);
+        if (bytes > 0)
         {
-            if (!ec && bytes > 0)
-            {
-                HandleReceive(bytes, *client);
-            }
-            else
-            {
-                std::cerr << "Receive error: " << ec.message() << std::endl;
-                StartReceive();
-            }
-        });
+            HandleReceive(static_cast<size_t>(bytes), client);
+        }
+    }
 }
 
-static std::vector<uint8_t> BuildNXDomainResponse(const uint8_t* query, size_t len)
+std::vector<uint8_t> adblocker::DNSAdBlocker::BuildNXDomainResponse(const uint8_t* query, size_t len)
 {
     if (len < 12) return {}; // invalid DNS query
 
@@ -82,9 +86,9 @@ static std::vector<uint8_t> BuildNXDomainResponse(const uint8_t* query, size_t l
 
 
 void adblocker::DNSAdBlocker::HandleReceive(std::size_t bytes_transferred,
-    const udp::endpoint& client)
+    const Endpoint& client)
 {
-    std::string domain = adblocker::DNSParser::ParseQuery(m_buffer.data(), bytes_transferred);
+    std::string domain = DNSParser::ParseQuery(m_buffer.data(), bytes_transferred);
 
     if (m_blocklist.IsValid(domain))
     {
@@ -93,49 +97,39 @@ void adblocker::DNSAdBlocker::HandleReceive(std::size_t bytes_transferred,
     else
     {
         std::cout << "Blocked: " << domain << std::endl;
-        // TODO: build proper NXDOMAIN
-        auto fake_response = BuildNXDomainResponse(m_buffer.data(), bytes_transferred);
+        const auto fake_response = BuildNXDomainResponse(m_buffer.data(), bytes_transferred);
         SendResponse(fake_response, client);
     }
 }
 
 void adblocker::DNSAdBlocker::ForwardQuery(const uint8_t* data, size_t len,
-                                                const udp::endpoint& client)
+    const Endpoint& client)
 {
-    auto reply_buf = std::make_shared<std::array<uint8_t, 1500>>();
-    auto upstream_ep = std::make_shared<udp::endpoint>();
-
-    m_upstream_socket.async_receive_from( boost::asio::buffer(*reply_buf), *upstream_ep,
-            [this, client, reply_buf, upstream_ep](const boost::system::error_code& ec, std::size_t bytes)
-            {
-                if (!ec)
-                {
-                    const std::vector<uint8_t> response(reply_buf->begin(),
-                                                  reply_buf->begin() + bytes);
-                    SendResponse(response, client);
-                }
-                else
-                {
-                    std::cerr << "Upstream receive error: " << ec.message() << std::endl;
-                }
-            });
-
-    m_upstream_socket.async_send_to(
-    boost::asio::buffer(data, len), m_upstream_endpoint,
-    [](const boost::system::error_code& ec, std::size_t bytes)
+    std::vector<uint8_t> upstream_buf(1500);
+    ssize_t n = m_upstream_socket.SendTo(std::vector<uint8_t>(data, data+len), m_upstream_ip, m_upstream_port);
+    if (n < 0)
     {
-        if (ec)
-            std::cerr << "Upstream send error: " << ec.message() << std::endl;
-    });
+        //TODO add log
+        std::cerr << "Failed to send to upstream DNS" << std::endl;
+        return;
+    }
+
+    Endpoint upstream;
+    n = m_upstream_socket.ReceiveFrom(upstream_buf,
+                            upstream.endpoint_ip, upstream.endpoint_port);
+    if (n > 0)
+    {
+        std::vector<uint8_t> response(upstream_buf.begin(), upstream_buf.begin() + n);
+        SendResponse(response, client);
+    }
+    else
+    {
+        std::cerr << "No response from upstream DNS" << std::endl;
+    }
 }
 
 void adblocker::DNSAdBlocker::SendResponse(const std::vector<uint8_t>& response,
-                                                    const udp::endpoint& client)
+    const Endpoint& client)
 {
-    m_listen_socket.async_send_to(boost::asio::buffer(response), client,
-        [this](const boost::system::error_code& ec, std::size_t bytes)
-        {
-            std::cout << "responded" << std::endl;
-            StartReceive();
-        });
+    m_listen_socket.SendTo(response, client.endpoint_ip, client.endpoint_port);
 }
