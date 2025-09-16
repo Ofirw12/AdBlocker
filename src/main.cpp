@@ -2,10 +2,12 @@
 #include <iostream>
 
 #include "DNSAdBlocker.hpp"
-
+#include "Logger.hpp"
 
 int main()
 {
+    adblocker::Logger& logger = adblocker::Logger::GetInstance();
+    logger.Init("log.txt");
     std::string listen_ip = "127.0.0.1";
     unsigned short listen_port = 5300;
     std::string dns_ip = "8.8.8.8";

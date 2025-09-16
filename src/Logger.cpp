@@ -1,23 +1,43 @@
 
-#include "Logger.hpp"
-
 #include <iostream>
 #include <sstream>
 
-adblocker::Logger::Logger(const std::string& path)
-: m_file(path, std::ios::app),
-    m_levelToStr({"DEBUG", "INFO",
-                                    "WARNING", "ERROR", "CRITICAL"})
-{
-    if (!m_file.is_open())
-    {
-        std::cerr << "Failed to open log file " << path << std::endl;
-    }
-}
+#include "Logger.hpp"
+
+adblocker::Logger::Logger()
+:m_levelToStr({"DEBUG", "INFO","WARNING",
+    "ERROR", "CRITICAL"}), m_isInitialized(false)
+{}
 
 adblocker::Logger::~Logger()
 {
-    m_file.close();
+    if (m_file.is_open())
+    {
+        m_file.close();
+    }
+}
+
+adblocker::Logger& adblocker::Logger::GetInstance()
+{
+    static Logger instance;
+    return instance;
+}
+
+void adblocker::Logger::Init(const std::string& path)
+{
+    std::unique_lock lock(m_mutex);
+    if (!m_isInitialized)
+    {
+        m_file.open(path, std::ios::app);
+        if (!m_file.is_open())
+        {
+            std::cerr << "Failed to open file " << path << std::endl;
+        }
+        else
+        {
+            m_isInitialized = true;
+        }
+    }
 }
 
 void adblocker::Logger::Log(LogLevel level, const std::string& message)
@@ -31,6 +51,12 @@ void adblocker::Logger::Log(LogLevel level, const std::string& message)
     entry << "[" << buffer.data() << "] " << m_levelToStr[level]
                                 << " " << message << std::endl;
 
-    m_file << entry.str();
-    m_file.flush();
+    {
+        std::unique_lock lock(m_mutex);
+        if (m_file.is_open())
+        {
+            m_file << entry.str();
+            m_file.flush();
+        }
+    }
 }
