@@ -33,4 +33,4 @@ target_link_libraries(adblocker_shared
 add_executable(dns_server main.cpp)
 
 # Link against adblocker (udp_socket comes transitively)
-target_link_libraries(dns_server PRIVATE adblocker_static)
+target_link_libraries(dns_server PRIVATE adblocker_static logger_static)

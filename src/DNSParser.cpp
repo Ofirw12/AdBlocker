@@ -1,7 +1,6 @@
-//
-// Created by ofir on 26/08/2025.
-//
+
 #include <iostream>
+
 #include "DNSParser.hpp"
 
 std::string adblocker::DNSParser::ParseQuery(const uint8_t* data, size_t len)

@@ -3,6 +3,7 @@
 #define ADBLOCKER_LOGGER_HPP
 
 #include <fstream>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -21,12 +22,24 @@ enum LogLevel
 class Logger
 {
 public:
-    Logger(const std::string& path);
-    ~Logger();
+
+    Logger(const Logger& other) = delete;
+    Logger& operator=(const Logger& other) = delete;
+    Logger(Logger&& other) = delete;
+    Logger& operator=(Logger&& other) = delete;
+
+    static Logger& GetInstance();
+
+    void Init(const std::string& path);
     void Log(LogLevel level, const std::string& message);
 private:
+    Logger();
+    ~Logger();
+
     std::ofstream m_file;
     std::vector<std::string> m_levelToStr;
+    std::mutex m_mutex;
+    bool m_isInitialized;
 }; // class Logger
 } // namespace adblocker
 

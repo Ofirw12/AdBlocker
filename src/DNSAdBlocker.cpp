@@ -19,13 +19,13 @@ void adblocker::DNSAdBlocker::Run(const std::string& listen_ip, uint16_t listen_
 {
     if (!m_listen_socket.Bind(listen_ip, listen_port))
     {
-        // TODO add log
+        Logger::GetInstance().Log(CRITICAL, "Failed to bind listen socket");
         throw std::runtime_error("Failed to bind listen socket");
     }
 
     if (!m_upstream_socket.Bind("0.0.0.0", 0))
     {
-        // TODO add log
+        Logger::GetInstance().Log(CRITICAL, "Failed to bind upstream socket");
         throw std::runtime_error("Failed to bind upstream socket");
     }
     m_blocklist.Load();
@@ -109,7 +109,7 @@ void adblocker::DNSAdBlocker::ForwardQuery(const uint8_t* data, size_t len,
     ssize_t n = m_upstream_socket.SendTo(std::vector<uint8_t>(data, data+len), m_upstream_ip, m_upstream_port);
     if (n < 0)
     {
-        //TODO add log
+        Logger::GetInstance().Log(CRITICAL, "Failed to send upstream socket");
         std::cerr << "Failed to send to upstream DNS" << std::endl;
         return;
     }
